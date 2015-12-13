@@ -3,6 +3,9 @@ import (
 	"strings"
 	"math/rand"
 	"time"
+	"os"
+	"log"
+	"encoding/json"
 )
 
 var random *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -114,6 +117,47 @@ func (m *Markov) GetWordCount() int {
 // the number of total words) due to the interconnectedness.
 func (m *Markov) GetLinkCount() int {
 	return m.LinkCount
+}
+
+func (m *Markov) SaveChainState(filename string) {
+	fo, err := os.Create(filename)
+	if err != nil {
+		log.Fatal("Uh oh, couldn't create the file for saving", err.Error())
+		os.Exit(1)
+	}
+	defer func() {
+		if err := fo.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	jsonParser := json.NewEncoder(fo)
+	if err := jsonParser.Encode(m); err != nil {
+		log.Fatal("Problem while persisting the markov chain to disk", err.Error())
+		os.Exit(1)
+	}
+}
+
+func (m *Markov) LoadChainState(filename string) {
+	fo, err := os.Open(filename)
+	if err != nil {
+		log.Fatal("Couldn't open the markov chain file", err.Error())
+		os.Exit(1)
+	}
+	defer func() {
+		if err := fo.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	jsonParser := json.NewDecoder(fo)
+
+	if err = jsonParser.Decode(m); err != nil {
+		log.Fatal("Problem in decoding json file", err.Error())
+		os.Exit(1)
+	}
+	println(m.GetLinkCount())
+	println(m.GetWordCount())
 }
 
 func totalWeight(theChain []Link) int {
