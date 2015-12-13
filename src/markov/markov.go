@@ -10,26 +10,26 @@ var random *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 type Word string
 
 type Link struct {
-	weight int
-	target Word
+	Weight int	`json:"weight"`
+	Target Word	`json:"target"`
 }
 
 type adjacencyList map[Word][]Link
 
 type Markov struct {
-	chain 				 adjacencyList
-	linkCount, wordCount int
+	Chain                adjacencyList	`json:"chain"`
+	LinkCount, WordCount int
 }
 
 func New() *Markov {
-	return &Markov{chain: make(adjacencyList)}
+	return &Markov{Chain: make(adjacencyList)}
 }
 
 // find a word in the linked list chain by value, returning true and
 // the element if found, and false and nil or the last element otherwise
 func find(theChain []Link, word Word) (bool, int) {
 	for i := range theChain {
-		if theChain[i].target == word {
+		if theChain[i].Target == word {
 			return true, i
 		}
 	}
@@ -42,16 +42,16 @@ func find(theChain []Link, word Word) (bool, int) {
 func (m *Markov) AddLink(from, to Word) int {
 	m.AddWord(from)
 	m.AddWord(to)
-	fromLinks := m.chain[from]
+	fromLinks := m.Chain[from]
 	found, index := find(fromLinks, to)
 	if found {
 		// increase the weight of this link
-		fromLinks[index].weight++
-		return fromLinks[index].weight
+		fromLinks[index].Weight++
+		return fromLinks[index].Weight
 	} else {
 		// create a new link with a weight of 1
-		m.chain[from] = append(fromLinks, Link{target: to, weight: 1})
-		m.linkCount++
+		m.Chain[from] = append(fromLinks, Link{Target: to, Weight: 1})
+		m.LinkCount++
 		return 1
     }
 }
@@ -61,10 +61,10 @@ func (m *Markov) AddLink(from, to Word) int {
 // already in the chain
 func (m *Markov) AddWord(word Word) bool {
 	// if there's no chain for this word
-	if m.chain[word] == nil {
+	if m.Chain[word] == nil {
 		// create a new chain
-		m.chain[word] = []Link{}
-		m.wordCount++
+		m.Chain[word] = []Link{}
+		m.WordCount++
 		// and return true
 		return true
 	}
@@ -77,12 +77,12 @@ func (m *Markov) AddWord(word Word) bool {
 // have the first word capitalized.
 func (m *Markov) Generate(start string, maxWords int) string {
 	startingWord := Word(start)
-	if m.chain[startingWord] == nil {
+	if m.Chain[startingWord] == nil {
 		return ""
 	}
 	markovChain := []string{strings.Title(start)}
 
-	links := m.chain[startingWord]
+	links := m.Chain[startingWord]
 	for wordCount := 1; wordCount <= maxWords; wordCount++ {
 		if len(links) == 0 {
 			break
@@ -91,10 +91,10 @@ func (m *Markov) Generate(start string, maxWords int) string {
 		targetWeight := random.Intn(linkWeight)
 		var seenWeight int
 		for i := range links {
-			seenWeight += links[i].weight
+			seenWeight += links[i].Weight
 			if seenWeight > targetWeight {
-				target := links[i].target
-				links = m.chain[target]
+				target := links[i].Target
+				links = m.Chain[target]
 				markovChain = append(markovChain, string(target))
 				break
 			}
@@ -106,20 +106,20 @@ func (m *Markov) Generate(start string, maxWords int) string {
 
 // GetWordCount returns the total number of unique words in the markov chain.
 func (m *Markov) GetWordCount() int {
-	return m.wordCount
+	return m.WordCount
 }
 
 // GetLinkCount returns the total number of links between words in the chain.
 // This is likely greater than the number of unique words (but far less than
 // the number of total words) due to the interconnectedness.
 func (m *Markov) GetLinkCount() int {
-	return m.linkCount
+	return m.LinkCount
 }
 
 func totalWeight(theChain []Link) int {
 	var sum int
 	for i := range theChain {
-		sum += theChain[i].weight
+		sum += theChain[i].Weight
 	}
 	return sum
 }
