@@ -15,26 +15,25 @@ import (
 var token = flag.String("apiToken", "Required", "Authentication token")
 var slackExportDir = flag.String("slackDir", "", "Directory with json exports from Slack to seed the Markov chain generator")
 var seedUser = flag.String("seedUser", "U03SW6XSU", "Use messages from this user ID to seed the Markov chain")
+var controlUser = flag.String("bossMan", "U0C01780Z", "Accept commands from this user")
 var markovFile = flag.String("markovFile", "markov.json", "JSON file of the Markov chain, defaults to markov.json")
 
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	var chain *markov.Markov
+	chain := markov.New()
 	if len(*slackExportDir) != 0 {
 		log.Printf("Loading Slack messages from user %s to create a bot in their personality", *seedUser)
-		chain = importSlackData()
+		importSlackData(chain)
 	} else {
-		chain = markov.New()
 		chain.LoadChainState(*markovFile)
 	}
 
-	slackbot.RunSlack(*token, chain)
+	slackbot.RunSlack(*token, chain, *markovFile, *controlUser)
 }
 
-func importSlackData() *markov.Markov{
-	chain := markov.New()
+func importSlackData(chain *markov.Markov) {
 	readMessages := getReadMessageFunc(chain)
 
 	err := filepath.Walk(*slackExportDir, readMessages)
@@ -44,8 +43,6 @@ func importSlackData() *markov.Markov{
 	}
 	log.Println(chain.GetLinkCount())
 	log.Println(chain.GetWordCount())
-
-	return chain
 }
 
 func getReadMessageFunc(chain *markov.Markov) func(string, os.FileInfo, error) error {

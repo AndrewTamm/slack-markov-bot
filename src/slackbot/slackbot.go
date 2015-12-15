@@ -4,18 +4,24 @@ import (
 	"log"
 	"strings"
 	"markov"
+	"os"
 )
 
 type slackConnection struct {
 	rtm *slack.RTM
 }
 
-func RunSlack(token string, chain *markov.Markov) {
+var filename string
+var controlUserId string
+
+func RunSlack(token string, chain *markov.Markov, file, controlUser string) {
 	api := slack.New(token)
 
 	conn := new(slackConnection)
 	conn.rtm = api.NewRTM()
 
+	filename = file
+	controlUserId = controlUser
 
 	go conn.rtm.ManageConnection()
 
@@ -39,6 +45,10 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 	if user != conn.rtm.GetInfo().User.ID {
 		log.Printf("channel %s user: %s text: %s", channel, user, text)
 		seeds := strings.Split(text, " ")
+		if seeds[0] == "marky" && user == controlUserId {
+			command(seeds[1], chain)
+			return
+		}
 		var answer string = ""
 		for _, seed := range seeds {
 			if possible := chain.Generate(seed, 15); len(possible) > len(answer) {
@@ -52,5 +62,13 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 			channelID, timestamp, err := conn.rtm.PostMessage(channel, answer, params)
 			log.Printf("channel: %s timestamp: %s: err: %s\n", channelID, timestamp, err)
 		}
+	}
+}
+
+func command(command string, chain *markov.Markov) {
+	switch command {
+	case "die":
+		chain.SaveChainState(filename)
+		os.Exit(0)
 	}
 }
