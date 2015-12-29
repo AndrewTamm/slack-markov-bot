@@ -17,6 +17,7 @@ var slackExportDir = flag.String("slackDir", "", "Directory with json exports fr
 var seedUser = flag.String("seedUser", "U03SW6XSU", "Use messages from this user ID to seed the Markov chain")
 var controlUser = flag.String("bossMan", "U0C01780Z", "Accept commands from this user")
 var markovFile = flag.String("markovFile", "markov.json", "JSON file of the Markov chain, defaults to markov.json")
+var responseProbability = flag.Int("responseProbability", 20, "The chance this bot will respond to a statement")
 
 func main() {
 	flag.Parse()
@@ -30,7 +31,7 @@ func main() {
 		chain.LoadChainState(*markovFile)
 	}
 
-	slackbot.RunSlack(*token, chain, *markovFile, *controlUser)
+	slackbot.RunSlack(*token, chain, *markovFile, *controlUser, *responseProbability)
 }
 
 func importSlackData(chain *markov.Markov) {

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"markov"
 	"os"
+	"math/rand"
+	"time"
 )
 
 type slackConnection struct {
@@ -13,8 +15,9 @@ type slackConnection struct {
 
 var filename string
 var controlUserId string
+var random *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func RunSlack(token string, chain *markov.Markov, file, controlUser string) {
+func RunSlack(token string, chain *markov.Markov, file, controlUser string, responseProbability int) {
 	api := slack.New(token)
 
 	conn := new(slackConnection)
@@ -32,7 +35,9 @@ func RunSlack(token string, chain *markov.Markov, file, controlUser string) {
 		case msg := <- conn.rtm.IncomingEvents:
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
-				messageReceived(chain, ev.Channel, ev.Text, ev.User, conn)
+				if random.Intn(responseProbability) == 0 {
+					messageReceived(chain, ev.Channel, ev.Text, ev.User, conn)
+				}
 			case *slack.InvalidAuthEvent:
 				log.Fatal("Invalid Credentials")
 				break Loop
