@@ -61,6 +61,22 @@ func TestAddLink(t *testing.T) {
 	checkedAddLink(the, forest, 2)
 }
 
+func TestLearnSentence(t *testing.T) {
+	markov := New()
+
+	learnedLinks := markov.LearnSentence("The quick brown fox jumps over the lazy dog.")
+
+	if learnedLinks != 8 {
+		t.Errorf("Didn't learn the right number of links. Learned %d", learnedLinks)
+	}
+
+	sentence := markov.Generate("quick", 9)
+
+	if "Quick brown fox jumps over the lazy dog." != sentence {
+		t.Errorf("Didn't learn links to give 'Quick brown fox jumps over the lazy dog. Got '%s' instead.", sentence)
+	}
+}
+
 func TestGenerate(t *testing.T) {
 	markov := New()
 

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"strings"
 	"os"
 	"io/ioutil"
 	"encoding/json"
@@ -31,7 +30,7 @@ func main() {
 		chain.LoadChainState(*markovFile)
 	}
 
-	slackbot.RunSlack(*token, chain, *markovFile, *controlUser, *responseProbability)
+	slackbot.RunSlack(*token, chain, *markovFile, *seedUser, *controlUser, *responseProbability)
 }
 
 func importSlackData(chain *markov.Markov) {
@@ -72,16 +71,7 @@ func getReadMessageFunc(chain *markov.Markov) func(string, os.FileInfo, error) e
 				if message_type == "message" {
 					if user, ok := element["user"]; ok && user == *seedUser {
 						if text, ok := element["text"]; ok {
-							var prev markov.Word = ""
-							for _,word := range strings.Split(text.(string), " ") {
-								if trimmed := strings.TrimSpace(word); len(trimmed) > 0 {
-									if prev != "" {
-										to := markov.Word(strings.ToLower(trimmed))
-										chain.AddLink(prev, to)
-									}
-									prev = markov.Word(trimmed)
-								}
-							}
+							chain.LearnSentence(text.(string))
 						}
 					}
 				}

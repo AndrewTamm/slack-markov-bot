@@ -75,6 +75,26 @@ func (m *Markov) AddWord(word Word) bool {
 	return false
 }
 
+// LearnSentence causes the markov chain to add an entire sentence (one or more words separated by whitespace)
+// Returns the number of new links between words added to the chain, less than or equal to the number of words.
+func (m *Markov) LearnSentence(sentence string) int {
+	var prev Word = ""
+	newLinkCount := 0
+	for _,word := range strings.Split(sentence, " ") {
+		if trimmed := strings.TrimSpace(word); len(trimmed) > 0 {
+			if prev != "" {
+				to := Word(strings.ToLower(trimmed))
+				var weight = m.AddLink(prev, to)
+				if weight == 1 {
+					newLinkCount++
+				}
+			}
+			prev = Word(trimmed)
+		}
+	}
+	return newLinkCount
+}
+
 // Generate creates a string (if one exists) starting with the start word and
 // continuing for at most maxWords (to avoid loops). The returned string will
 // have the first word capitalized.
