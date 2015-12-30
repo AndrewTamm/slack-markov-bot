@@ -14,7 +14,6 @@ type slackConnection struct {
 }
 
 var filename string
-var controlUserId string
 var random *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func RunSlack(token string, chain *markov.Markov, file, seedUser, controlUser string, responseProbability int) {
@@ -24,7 +23,6 @@ func RunSlack(token string, chain *markov.Markov, file, seedUser, controlUser st
 	conn.rtm = api.NewRTM()
 
 	filename = file
-	controlUserId = controlUser
 
 	go conn.rtm.ManageConnection()
 
@@ -36,9 +34,13 @@ func RunSlack(token string, chain *markov.Markov, file, seedUser, controlUser st
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
 				if ev.User != conn.rtm.GetInfo().User.ID {
-					if refersToMe(ev.Text, conn) || random.Intn(responseProbability) == 0 {
+					if strings.HasPrefix(ev.Text, "marky") && ev.User == controlUser {
+						command(ev.Text, chain)
+						return
+					} else if refersToMe(ev.Text, conn) || random.Intn(responseProbability) == 0 {
 						messageReceived(chain, ev.Channel, ev.Text, ev.User, conn)
 					}
+
 					if ev.User == seedUser  && !refersToMe(ev.Text, conn) {
 						log.Printf("Learning '%s'", ev.Text)
 						chain.LearnSentence(ev.Text)
@@ -56,10 +58,6 @@ func RunSlack(token string, chain *markov.Markov, file, seedUser, controlUser st
 func messageReceived(chain *markov.Markov, channel, text, user string, conn *slackConnection) {
 	log.Printf("channel %s user: %s text: %s", channel, user, text)
 	seeds := strings.Split(text, " ")
-	if seeds[0] == "marky" && user == controlUserId {
-		command(seeds[1], chain)
-		return
-	}
 	answer := ""
 	for _, seed := range seeds {
 		if possible := chain.Generate(seed, 15); len(possible) > len(answer) {
@@ -76,7 +74,8 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 }
 
 func command(command string, chain *markov.Markov) {
-	switch command {
+	seeds := strings.Split(command, " ")
+	switch seeds[1] {
 	case "die":
 		chain.SaveChainState(filename)
 		os.Exit(0)
