@@ -68,6 +68,7 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 		params := slack.PostMessageParameters{}
 		params.AsUser = true
 		params.LinkNames = 1
+		params.UnfurlLinks = true
 		channelID, timestamp, err := conn.rtm.PostMessage(channel, answer, params)
 		log.Printf("channel: %s timestamp: %s: err: %s\n", channelID, timestamp, err)
 	}
