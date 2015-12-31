@@ -82,14 +82,14 @@ func (m *Markov) LearnSentence(sentence string) int {
 	newLinkCount := 0
 	for _,word := range strings.Split(sentence, " ") {
 		if trimmed := strings.TrimSpace(word); len(trimmed) > 0 {
+			to := Word(strings.ToLower(trimmed))
 			if prev != "" {
-				to := Word(strings.ToLower(trimmed))
 				var weight = m.AddLink(prev, to)
 				if weight == 1 {
 					newLinkCount++
 				}
 			}
-			prev = Word(trimmed)
+			prev = to
 		}
 	}
 	return newLinkCount
@@ -99,7 +99,7 @@ func (m *Markov) LearnSentence(sentence string) int {
 // continuing for at most maxWords (to avoid loops). The returned string will
 // have the first word capitalized.
 func (m *Markov) Generate(start string, maxWords int) string {
-	startingWord := Word(start)
+	startingWord := Word(strings.ToLower(start))
 	if m.Chain[startingWord] == nil {
 		return ""
 	}
