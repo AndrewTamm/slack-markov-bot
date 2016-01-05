@@ -98,12 +98,12 @@ func (m *Markov) LearnSentence(sentence string) int {
 // Generate creates a string (if one exists) starting with the start word and
 // continuing for at most maxWords (to avoid loops). The returned string will
 // have the first word capitalized.
-func (m *Markov) Generate(start string, maxWords int) string {
+func (m *Markov) Generate(start string, maxWords int) []string {
 	startingWord := Word(strings.ToLower(start))
 	if m.Chain[startingWord] == nil {
-		return ""
+		return []string{}
 	}
-	markovChain := []string{strings.Title(start)}
+	markovChain := []string{start}
 
 	links := m.Chain[startingWord]
 	for wordCount := 1; wordCount <= maxWords; wordCount++ {
@@ -124,7 +124,7 @@ func (m *Markov) Generate(start string, maxWords int) string {
 		}
 	}
 
-	return strings.Join(markovChain, " ")
+	return markovChain
 }
 
 // GetWordCount returns the total number of unique words in the markov chain.

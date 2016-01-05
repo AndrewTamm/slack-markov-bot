@@ -3,6 +3,7 @@ package markov
 import (
 	"testing"
 	"math/rand"
+	"strings"
 )
 
 var bear Word = "bear"
@@ -12,6 +13,7 @@ var tall Word = "tall"
 var short Word = "short"
 var in Word = "in"
 var the Word = "the"
+var a Word = "a"
 var forest Word = "forest"
 
 var words []Word = []Word{bear, tree, is, tall, short, in, the, forest}
@@ -64,16 +66,17 @@ func TestAddLink(t *testing.T) {
 func TestLearnSentence(t *testing.T) {
 	markov := New()
 
-	learnedLinks := markov.LearnSentence("The quick brown fox jumps over the lazy dog.")
+	learnedLinks := markov.LearnSentence("The quick brown fox jumps over a lazy dog.")
 
 	if learnedLinks != 8 {
 		t.Errorf("Didn't learn the right number of links. Learned %d", learnedLinks)
 	}
 
-	sentence := markov.Generate("quick", 9)
+	chain := markov.Generate("the", 9)
+	sentence := strings.Join(chain, " ")
 
-	if "Quick brown fox jumps over the lazy dog." != sentence {
-		t.Errorf("Didn't learn links to give 'Quick brown fox jumps over the lazy dog. Got '%s' instead.", sentence)
+	if "the quick brown fox jumps over a lazy dog." != sentence {
+		t.Errorf("Didn't learn links to give 'The quick brown fox jumps over a lazy dog. Got '%s' instead.", sentence)
 	}
 }
 
@@ -86,12 +89,13 @@ func TestGenerate(t *testing.T) {
 	markov.AddLink(the, bear)
 	markov.AddLink(bear, is)
 	markov.AddLink(is, in)
-	markov.AddLink(in, the)
-	markov.AddLink(the, forest)
+	markov.AddLink(in, a)
+	markov.AddLink(a, forest)
 
-	sentence := markov.Generate("the", 6)
+	chain := markov.Generate("the", 7)
+	sentence := strings.Join(chain, " ")
 
-	if (sentence != "The bear is in the bear is") {
-		t.Errorf("Didn't generate the right chain")
+	if (sentence != "the bear is in a forest") {
+		t.Errorf("Didn't generate the right chain. Expected 'the bear is in a forest' but got '%s' instead", sentence)
 	}
 }
