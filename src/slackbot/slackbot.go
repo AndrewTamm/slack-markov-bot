@@ -7,6 +7,10 @@ import (
 	"os"
 	"math/rand"
 	"time"
+	"regexp"
+	"bytes"
+	"unicode/utf8"
+	"unicode"
 )
 
 type slackConnection struct {
@@ -58,7 +62,7 @@ func RunSlack(token string, chain *markov.Markov, file, seedUser, controlUser st
 func messageReceived(chain *markov.Markov, channel, text, user string, conn *slackConnection) {
 	log.Printf("channel %s user: %s text: %s", channel, user, text)
 	seeds := strings.Split(text, " ")
-	answer := ""
+	var answer []string
 	for _, seed := range seeds {
 		if possible := chain.Generate(seed, 15); len(possible) > len(answer) {
 			answer = possible
@@ -69,7 +73,18 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 		params.AsUser = true
 		params.LinkNames = 1
 		params.UnfurlLinks = true
-		channelID, timestamp, err := conn.rtm.PostMessage(channel, answer, params)
+
+		for i, word := range answer {
+			if c,w := capitalizeMentions(word); c {
+				answer[i] = w
+			}
+		}
+
+		if !isEmoji(answer[0]) {
+			answer[0] = upperFirst(answer[0])
+		}
+
+		channelID, timestamp, err := conn.rtm.PostMessage(channel, strings.Join(answer, " "), params)
 		log.Printf("channel: %s timestamp: %s: err: %s\n", channelID, timestamp, err)
 	}
 }
@@ -85,4 +100,27 @@ func command(command string, chain *markov.Markov) {
 
 func refersToMe(message string, conn *slackConnection) bool {
 	return strings.Contains(message, conn.rtm.GetInfo().User.ID)
+}
+
+func capitalizeMentions(word string) (bool,string) {
+	if r, err := regexp.Compile("@[Uu][A-z0-9]{8}"); err == nil {
+		out := r.ReplaceAllFunc([]byte(word), bytes.ToUpper)
+		return true, string(out)
+	}
+	return false, word
+}
+
+func isEmoji(word string) bool {
+	if match, _ := regexp.Match(":[[:alnum:]]:", []byte(word)); match {
+		return true
+	}
+	return false
+}
+
+func upperFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToLower(r)) + s[n:]
 }
