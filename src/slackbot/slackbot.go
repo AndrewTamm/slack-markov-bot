@@ -122,5 +122,5 @@ func upperFirst(s string) string {
 		return ""
 	}
 	r, n := utf8.DecodeRuneInString(s)
-	return string(unicode.ToLower(r)) + s[n:]
+	return string(unicode.ToUpper(r)) + s[n:]
 }
