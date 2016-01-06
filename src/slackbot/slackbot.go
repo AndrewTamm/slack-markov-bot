@@ -62,12 +62,16 @@ func RunSlack(token string, chain *markov.Markov, file, seedUser, controlUser st
 func messageReceived(chain *markov.Markov, channel, text, user string, conn *slackConnection) {
 	log.Printf("channel %s user: %s text: %s", channel, user, text)
 	seeds := strings.Split(text, " ")
-	var answer []string
+	var results [][]string
 	for _, seed := range seeds {
-		if possible := chain.Generate(seed, 15); len(possible) > len(answer) {
-			answer = possible
+		newChain := chain.Generate(seed, 15)
+		if (len(newChain)) {
+			results = append(results, newChain)
 		}
 	}
+
+	answer := results[rand.Intn(len(results))]
+
 	if len(answer) > 0 {
 		params := slack.PostMessageParameters{}
 		params.AsUser = true
