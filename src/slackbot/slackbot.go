@@ -65,7 +65,7 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 	var results [][]string
 	for _, seed := range seeds {
 		newChain := chain.Generate(seed, 15)
-		if (len(newChain)) {
+		if (len(newChain) > 0) {
 			results = append(results, newChain)
 		}
 	}
