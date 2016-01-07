@@ -70,25 +70,25 @@ func messageReceived(chain *markov.Markov, channel, text, user string, conn *sla
 		}
 	}
 
-	answer := results[rand.Intn(len(results))]
+	if len(results) > 0 {
+		answerText := results[rand.Intn(len(results))]
 
-	if len(answer) > 0 {
 		params := slack.PostMessageParameters{}
 		params.AsUser = true
 		params.LinkNames = 1
 		params.UnfurlLinks = true
 
-		for i, word := range answer {
+		for i, word := range answerText {
 			if c,w := capitalizeMentions(word); c {
-				answer[i] = w
+				answerText[i] = w
 			}
 		}
 
-		if !isEmoji(answer[0]) {
-			answer[0] = upperFirst(answer[0])
+		if !isEmoji(answerText[0]) {
+			answerText[0] = upperFirst(answerText[0])
 		}
 
-		channelID, timestamp, err := conn.rtm.PostMessage(channel, strings.Join(answer, " "), params)
+		channelID, timestamp, err := conn.rtm.PostMessage(channel, strings.Join(answerText, " "), params)
 		log.Printf("channel: %s timestamp: %s: err: %s\n", channelID, timestamp, err)
 	}
 }
